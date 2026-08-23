@@ -208,3 +208,44 @@ html, body {
   display: flex; justify-content: space-between; align-items: center;
   font-size: 12px; color: var(--color-neutral-500);
 }
+
+/* ── Rotate overlay ─────────────────────────────────── */
+#rotate-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--color-bg);
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px;
+  color: var(--color-neutral-400); font-size: 14px; text-align: center;
+}
+@media (orientation: portrait) and (max-width: 1023px) {
+  #rotate-overlay { display: flex; }
+}
+
+/* ── Mobile layout ──────────────────────────────────── */
+@media (max-width: 1023px) {
+  #app {
+    padding: 0; gap: 0;
+    height: 100dvh; overflow: hidden;
+  }
+  #stage {
+    width: 100%; max-height: 100dvh;
+    border: none; border-radius: 0;
+    touch-action: none;
+  }
+  #status-bar { display: none; }
+
+  /* Safe areas for notched phones */
+  .chip {
+    top: max(2.2%, env(safe-area-inset-top, 0px));
+    left: max(1.6%, env(safe-area-inset-left, 0px));
+  }
+  #hud-top-right {
+    top: max(2.2%, env(safe-area-inset-top, 0px));
+    right: max(1.6%, env(safe-area-inset-right, 0px));
+  }
+  #hud-bottom-left {
+    bottom: max(3%, env(safe-area-inset-bottom, 0px));
+    left: max(1.6%, env(safe-area-inset-left, 0px));
+  }
+}

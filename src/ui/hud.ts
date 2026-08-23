@@ -15,6 +15,8 @@ export class Hud {
   private els = {
     lives: $('hud-lives'), gold: $('hud-gold'), level: $('hud-level'), wave: $('hud-wave'),
     speedBtn: $('btn-speed') as HTMLButtonElement, pauseBtn: $('btn-pause') as HTMLButtonElement,
+    fullscreenBtn: $('btn-fullscreen') as HTMLButtonElement,
+    iconExpand: $('icon-expand'), iconCompress: $('icon-compress'),
     nextWaveBtn: $('btn-next-wave') as HTMLButtonElement, callLabel: $('call-label'),
     overlay: $('overlay'), kicker: $('overlay-kicker'), title: $('overlay-title'), body: $('overlay-body'),
     primaryBtn: $('btn-primary') as HTMLButtonElement,
@@ -32,6 +34,18 @@ export class Hud {
     this.els.nextWaveBtn.addEventListener('click', () => state.callWaveEarly());
     this.els.restartBtn.addEventListener('click', () => state.reset());
     this.els.primaryBtn.addEventListener('click', () => this.onPrimary());
+    this.els.fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      } else {
+        document.exitFullscreen?.().catch(() => {});
+      }
+    });
+    document.addEventListener('fullscreenchange', () => {
+      const active = !!document.fullscreenElement;
+      this.els.iconExpand.hidden = active;
+      this.els.iconCompress.hidden = !active;
+    });
   }
 
   private onPrimary() {
