@@ -46,6 +46,15 @@ export class Hud {
       this.els.iconExpand.hidden = active;
       this.els.iconCompress.hidden = !active;
     });
+    const tryFullscreenOnLandscape = () => {
+      const landscape = window.matchMedia('(orientation: landscape)').matches;
+      const mobile = window.matchMedia('(max-width: 1023px)').matches;
+      if (landscape && mobile && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      }
+    };
+    window.addEventListener('orientationchange', tryFullscreenOnLandscape);
+    window.matchMedia('(orientation: landscape)').addEventListener('change', tryFullscreenOnLandscape);
   }
 
   private onPrimary() {
