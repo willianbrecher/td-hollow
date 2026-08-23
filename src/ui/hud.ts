@@ -14,6 +14,7 @@ function $(id: string): HTMLElement { const el = document.getElementById(id); if
 export class Hud {
   private els = {
     lives: $('hud-lives'), gold: $('hud-gold'), level: $('hud-level'), wave: $('hud-wave'),
+    mLives: $('mhdr-lives'), mGold: $('mhdr-gold'), mLevel: $('mhdr-level'), mWave: $('mhdr-wave'),
     speedBtn: $('btn-speed') as HTMLButtonElement, pauseBtn: $('btn-pause') as HTMLButtonElement,
     fullscreenBtn: $('btn-fullscreen') as HTMLButtonElement,
     iconExpand: $('icon-expand'), iconCompress: $('icon-compress'),
@@ -66,10 +67,18 @@ export class Hud {
   }
 
   sync(state: GameState): void {
-    this.els.lives.textContent = String(state.lives);
-    this.els.gold.textContent = String(state.gold);
-    this.els.level.textContent = String(state.level);
-    this.els.wave.textContent = Math.max(1, state.waveInLevel) + '/' + WAVES_PER_LEVEL;
+    const livesStr = String(state.lives);
+    const goldStr = String(state.gold);
+    const levelStr = String(state.level);
+    const waveStr = Math.max(1, state.waveInLevel) + '/' + WAVES_PER_LEVEL;
+    this.els.lives.textContent = livesStr;
+    this.els.gold.textContent = goldStr;
+    this.els.level.textContent = levelStr;
+    this.els.wave.textContent = waveStr;
+    this.els.mLives.textContent = livesStr;
+    this.els.mGold.textContent = goldStr;
+    this.els.mLevel.textContent = levelStr;
+    this.els.mWave.textContent = waveStr;
 
     this.els.speedBtn.textContent = '×' + (state.speed === 2 ? '2' : '1');
     this.els.speedBtn.style.color = state.speed === 2 ? 'var(--color-accent)' : 'var(--color-neutral-400)';
@@ -141,10 +150,15 @@ export class Hud {
     });
   }
 
+  private menuOrbit(): { orbit: number; pad: number } {
+    const sw = document.getElementById('stage')?.clientWidth ?? W;
+    return sw / W < 0.85 ? { orbit: 100, pad: 110 } : { orbit: 62, pad: 78 };
+  }
+
   private optionHtml(px: number, py: number, o: MenuOption, gold: number): string {
-    const pad = 78;
+    const { orbit, pad } = this.menuOrbit();
     const cpx = Math.max(pad, Math.min(W - pad, px)), cpy = Math.max(pad, Math.min(H - pad, py));
-    const ox = cpx + Math.cos(o.ang) * 62, oy = cpy + Math.sin(o.ang) * 62;
+    const ox = cpx + Math.cos(o.ang) * orbit, oy = cpy + Math.sin(o.ang) * orbit;
     const leftPct = (ox / W) * 100, topPct = (oy / H) * 100;
     const afford = o.cost <= 0 || gold >= o.cost;
     const art = TOWERS[o.key as keyof typeof TOWERS]?.art;
@@ -160,7 +174,7 @@ export class Hud {
   }
 
   private showTip(px: number, py: number, o: MenuOption) {
-    const pad = 78;
+    const { pad } = this.menuOrbit();
     const cpx = Math.max(pad, Math.min(W - pad, px)), cpy = Math.max(pad, Math.min(H - pad, py));
     const leftPct = (cpx / W) * 100;
     const anchorRight = leftPct > 55;

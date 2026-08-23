@@ -209,6 +209,25 @@ html, body {
   font-size: 12px; color: var(--color-neutral-500);
 }
 
+/* ── Mobile header ──────────────────────────────────── */
+#mobile-header {
+  display: none;
+  width: 100%;
+  height: 46px;
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-neutral-700);
+  backdrop-filter: blur(6px);
+  align-items: center;
+  gap: 16px;
+  padding: 0 14px;
+  flex-shrink: 0;
+  font-family: var(--font-heading);
+  font-variant-numeric: tabular-nums;
+}
+.mhdr-item { display: flex; align-items: center; gap: 6px; font-size: 15px; }
+.mhdr-sep { width: 1px; height: 16px; background: var(--color-neutral-700); }
+.mhdr-label { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-neutral-500); margin-right: 2px; }
+
 /* ── Rotate overlay ─────────────────────────────────── */
 #rotate-overlay {
   display: none;
@@ -228,18 +247,22 @@ html, body {
     padding: 0; gap: 0;
     height: 100dvh; overflow: hidden;
   }
+  #mobile-header {
+    display: flex;
+    padding-left: max(14px, env(safe-area-inset-left, 0px));
+    padding-right: max(14px, env(safe-area-inset-right, 0px));
+  }
+  .chip { display: none; }
   #stage {
-    width: 100%; max-height: 100dvh;
+    width: 100%;
+    height: calc(100dvh - 46px);
+    max-height: calc(100dvh - 46px);
     border: none; border-radius: 0;
     touch-action: none;
   }
   #status-bar { display: none; }
 
   /* Safe areas for notched phones */
-  .chip {
-    top: max(2.2%, env(safe-area-inset-top, 0px));
-    left: max(1.6%, env(safe-area-inset-left, 0px));
-  }
   #hud-top-right {
     top: max(2.2%, env(safe-area-inset-top, 0px));
     right: max(1.6%, env(safe-area-inset-right, 0px));
@@ -248,4 +271,11 @@ html, body {
     bottom: max(3%, env(safe-area-inset-bottom, 0px));
     left: max(1.6%, env(safe-area-inset-left, 0px));
   }
+
+  /* Tower menu — smaller buttons so they don't overlap on small screens */
+  .build-menu-option {
+    width: 36px; height: 36px;
+    margin-left: -18px; margin-top: -18px;
+  }
+  .build-menu-option img { width: 26px; height: 26px; }
 }
