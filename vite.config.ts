@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/td-hollow/',
+  base: './',
   server: { port: 5173 }
 });
