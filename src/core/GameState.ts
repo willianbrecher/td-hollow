@@ -130,8 +130,8 @@ export class GameState {
     this.level = n; this.waveInLevel = 0;
     this.buildMap(this.runSeed + n * 7919);
     this.enemies = []; this.shots = []; this.parts = []; this.spawnQueue = [];
-    this.spawnTimer = 0; this.prep = 0; this.menu = null;
-    this.startWave();
+    this.spawnTimer = 0; this.prep = 20; this.menu = null;
+    this.phase = 'playing';
   }
 
   update(dt: number): void {
