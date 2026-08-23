@@ -54,7 +54,7 @@ export class Hud {
         document.documentElement.requestFullscreen?.().catch(() => {});
       }
     };
-    window.addEventListener('orientationchange', tryFullscreenOnLandscape);
+    window.addEventListener('orientationchange', () => setTimeout(tryFullscreenOnLandscape, 300));
     window.matchMedia('(orientation: landscape)').addEventListener('change', tryFullscreenOnLandscape);
   }
 
