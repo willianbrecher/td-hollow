@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hollow Line</title>
+</head>
+<body>
+  <div id="app">
+    <div id="stage">
+      <div id="game-root"></div>
+
+      <div id="hud-top-left" class="chip">
+        <div class="chip-item">
+          <svg width="16" height="16" viewBox="0 0 256 256" fill="#d98f9c"><path d="M178 40c-20.6 0-38.6 8.9-50 23.9C116.6 48.9 98.6 40 78 40a62 62 0 0 0-62 62c0 70 103.8 126.7 108.2 129a8 8 0 0 0 7.6 0C136.2 228.7 240 172 240 102a62 62 0 0 0-62-62Z"/></svg>
+          <span id="hud-lives">20</span>
+        </div>
+        <div class="chip-item">
+          <svg width="16" height="16" viewBox="0 0 256 256" fill="#c9b271"><circle cx="128" cy="128" r="88"/></svg>
+          <span id="hud-gold">300</span>
+        </div>
+        <div class="chip-sep"></div>
+        <div class="chip-item"><span class="chip-label">Level</span><span id="hud-level" class="chip-accent">1</span></div>
+        <div class="chip-item"><span class="chip-label">Wave</span><span id="hud-wave">1/6</span></div>
+      </div>
+
+      <div id="hud-top-right">
+        <button id="btn-speed" class="icon-btn">×1</button>
+        <button id="btn-pause" class="icon-btn" aria-label="Pause">
+          <svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor"><rect x="52" y="40" width="52" height="176" rx="6"/><rect x="152" y="40" width="52" height="176" rx="6"/></svg>
+        </button>
+      </div>
+
+      <div id="hud-bottom-left">
+        <button id="btn-next-wave" class="pill-btn">
+          <svg width="15" height="15" viewBox="0 0 256 256"><path d="M232 128a8 8 0 0 1-3.7 6.8l-160 100A8 8 0 0 1 56 228V28a8 8 0 0 1 12.3-6.8l160 100A8 8 0 0 1 232 128Z"/></svg>
+          <span id="call-label">Wave 1 incoming</span>
+        </button>
+      </div>
+
+      <div id="overlay" class="overlay">
+        <div class="overlay-card">
+          <div id="overlay-kicker" class="kicker">Hollow Line</div>
+          <div id="overlay-title" class="title">Who holds the line?</div>
+          <div id="overlay-body" class="body"></div>
+          <div id="name-row" class="name-row">
+            <input id="name-input" class="input" placeholder="Commander name" maxlength="18" />
+          </div>
+          <div id="rank-row" class="rank-row"></div>
+          <div class="overlay-actions">
+            <button id="btn-primary" class="btn btn-primary">Begin</button>
+            <button id="btn-restart" class="btn btn-ghost" hidden>Restart</button>
+            <button id="btn-change-player" class="btn btn-ghost" hidden>Change commander</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="build-menu" class="build-menu" hidden></div>
+      <div id="build-tip" class="build-tip" hidden></div>
+    </div>
+
+    <div id="status-bar">
+      <div id="status-line"></div>
+      <div id="player-line"></div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
