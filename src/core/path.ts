@@ -89,16 +89,11 @@ export function genPath(seed: number, level: number, W: number, H: number): Path
     pts.push({ x: W + 50, y: pts[pts.length - 1].y });
   }
 
-  const styleRand = rng(seed + 999);
-  const style = styleRand();
-  const smooth = style < .34 ? 0 : style < .67 ? .5 : 1;
-  const roadStyle: RoadStyle = smooth === 0 ? 'sharp' : smooth === 1 ? 'flowing' : 'mixed';
-  if (smooth === 0) return { pts, roadStyle };
+  const roadStyle: RoadStyle = 'flowing';
 
   const out: Point[] = [pts[0]];
   for (let i = 1; i < pts.length - 1; i++) {
     const a2 = pts[i - 1], b2 = pts[i], c2 = pts[i + 1];
-    if (smooth < 1 && styleRand() > .55) { out.push(b2); continue; }
     const la = Math.hypot(b2.x - a2.x, b2.y - a2.y), lc = Math.hypot(c2.x - b2.x, c2.y - b2.y);
     const r1 = Math.min(66, la * .42), r2 = Math.min(66, lc * .42);
     const p0 = { x: b2.x + (a2.x - b2.x) / (la || 1) * r1, y: b2.y + (a2.y - b2.y) / (la || 1) * r1 };

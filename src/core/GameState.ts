@@ -1,12 +1,10 @@
 import { W, H, WAVES_PER_LEVEL, ACCENT } from './constants';
 import { TOWERS, ORDER, MAX_LEVEL, TowerType, TowerSpec, upCost } from '../data/towers';
-import { KINDS, MonsterType } from '../data/monsters';
+import { KINDS, BOSSES, MonsterType } from '../data/monsters';
 import { genPath, buildSegments, distToPath, nearestOnPath, posAt, Point, Segment, RoadStyle } from './path';
 import { buildTerrain, Terrain } from './terrain';
 import { waveComp } from './economy';
-import { Ranking } from './ranking';
-
-export type Phase = 'name' | 'intro' | 'playing' | 'paused' | 'levelup' | 'over';
+export type Phase = 'intro' | 'playing' | 'paused' | 'levelup' | 'over';
 
 export interface Tower {
   type: TowerType;
@@ -57,20 +55,21 @@ export class GameState {
   startingGold: number;
   startingLives: number;
 
-  phase: Phase = 'name';
+  phase: Phase = 'intro';
   gold = 0;
   lives = 0;
   level = 1;
   waveInLevel = 0;
   wave = 0;
   speed: 1 | 2 = 1;
-  best = 0;
+  sessionBest = 0;
+  newSessionRecord = false;
 
   runSeed = 0;
   pts: Point[] = [];
   segs: Segment[] = [];
   pathLen = 0;
-  roadStyle: RoadStyle = 'sharp';
+  roadStyle: RoadStyle = 'flowing';
   terrain: Terrain = { patches: [], decor: [], blobs: [] };
 
   plots: Plot[] = [];
@@ -84,23 +83,12 @@ export class GameState {
   time = 0;
   scale = 1;
 
-  ranking = new Ranking();
-
   /** Set by the render layer; fires whenever buildMap() produces a new path/terrain so it can redraw its static layer. */
   onMapRebuilt?: () => void;
 
   constructor(opts: GameStateOptions = {}) {
     this.startingGold = opts.startingGold ?? 300;
     this.startingLives = opts.startingLives ?? 20;
-    this.ranking.load();
-    this.best = this.ranking.bestOf(this.ranking.player);
-  }
-
-  get player(): string { return this.ranking.player; }
-
-  setPlayer(name: string): void {
-    this.ranking.setPlayer(name);
-    this.best = this.ranking.bestOf(this.ranking.player);
   }
 
   reset(): void {
@@ -113,7 +101,8 @@ export class GameState {
     this.menu = null;
     this.enemies = []; this.shots = []; this.parts = []; this.spawnQueue = [];
     this.spawnTimer = 0; this.prep = 12; this.time = 0;
-    this.phase = 'name';
+    this.newSessionRecord = false;
+    this.phase = 'intro';
   }
 
   buildMap(seed: number): void {
@@ -169,9 +158,9 @@ export class GameState {
       const p = posAt(this.segs, this.pts, e.d); e.x = p.x; e.y = p.y;
       if (e.d >= this.pathLen) e.leaked = true;
     }
-    let leaked = 0;
-    this.enemies = this.enemies.filter(e => { if (e.leaked) { leaked++; return false; } return true; });
-    if (leaked) { const l = this.pts[this.pts.length - 1]; this.lives -= leaked; this.spark(l.x - 40, l.y, '#d98f9c', 16); }
+    let leaked = 0, bossLeak = false;
+    this.enemies = this.enemies.filter(e => { if (e.leaked) { leaked++; if (BOSSES.includes(e.kind)) bossLeak = true; return false; } return true; });
+    if (leaked) { const l = this.pts[this.pts.length - 1]; this.lives = bossLeak ? 0 : Math.max(0, this.lives - leaked); this.spark(l.x - 40, l.y, '#d98f9c', bossLeak ? 32 : 16); }
 
     for (const p of this.plots) {
       const t = p.tower; if (!t) continue;
@@ -212,8 +201,8 @@ export class GameState {
 
     if (this.lives <= 0) {
       this.lives = 0;
-      this.ranking.record(this.level);
-      this.best = this.ranking.bestOf(this.player);
+      this.newSessionRecord = this.level > this.sessionBest;
+      if (this.newSessionRecord) this.sessionBest = this.level;
       this.phase = 'over';
       return;
     }
@@ -222,8 +211,6 @@ export class GameState {
       if (this.waveInLevel >= WAVES_PER_LEVEL) {
         this.gold += 90 + this.level * 40;
         this.lives = Math.min(this.startingLives, this.lives + 3);
-        this.ranking.record(this.level);
-        this.best = this.ranking.bestOf(this.player);
         this.phase = 'levelup';
       } else {
         this.prep = 14;

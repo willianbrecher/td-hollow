@@ -17,9 +17,8 @@ export class Hud {
     speedBtn: $('btn-speed') as HTMLButtonElement, pauseBtn: $('btn-pause') as HTMLButtonElement,
     nextWaveBtn: $('btn-next-wave') as HTMLButtonElement, callLabel: $('call-label'),
     overlay: $('overlay'), kicker: $('overlay-kicker'), title: $('overlay-title'), body: $('overlay-body'),
-    nameRow: $('name-row'), nameInput: $('name-input') as HTMLInputElement,
-    rankRow: $('rank-row'), primaryBtn: $('btn-primary') as HTMLButtonElement,
-    restartBtn: $('btn-restart') as HTMLButtonElement, changePlayerBtn: $('btn-change-player') as HTMLButtonElement,
+    primaryBtn: $('btn-primary') as HTMLButtonElement,
+    restartBtn: $('btn-restart') as HTMLButtonElement,
     buildMenu: $('build-menu'), buildTip: $('build-tip'),
     statusLine: $('status-line'), playerLine: $('player-line')
   };
@@ -32,20 +31,15 @@ export class Hud {
     this.els.pauseBtn.addEventListener('click', () => state.togglePause());
     this.els.nextWaveBtn.addEventListener('click', () => state.callWaveEarly());
     this.els.restartBtn.addEventListener('click', () => state.reset());
-    this.els.changePlayerBtn.addEventListener('click', () => { state.phase = 'name'; });
-    this.els.nameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { state.setPlayer(this.els.nameInput.value); state.phase = 'intro'; }
-    });
     this.els.primaryBtn.addEventListener('click', () => this.onPrimary());
   }
 
   private onPrimary() {
     const st = this.state;
-    if (st.phase === 'name') { st.setPlayer(this.els.nameInput.value); st.phase = 'intro'; }
-    else if (st.phase === 'intro') { st.prep = 0; st.startWave(); }
+    if (st.phase === 'intro') { st.prep = 0; st.startWave(); }
     else if (st.phase === 'paused') { st.phase = 'playing'; }
     else if (st.phase === 'levelup') { st.plots = []; st.startLevel(st.level + 1); }
-    else { st.reset(); st.prep = 0; st.startWave(); }
+    else { st.reset(); }
   }
 
   sync(state: GameState): void {
@@ -68,10 +62,12 @@ export class Hud {
     this.syncMenu(state);
 
     this.els.statusLine.textContent = state.phase === 'over'
-      ? 'Line broken on level ' + state.level + ' — best ' + (state.best || 0)
+      ? 'Line broken on level ' + state.level
       : state.phase === 'levelup' ? 'Level ' + state.level + ' cleared'
       : (prep > 0 ? 'Building phase' : state.enemies.length + ' hostiles on the field');
-    this.els.playerLine.textContent = (state.player || 'No commander') + ' · best level ' + (state.best || 0) + ' · Space pauses';
+    this.els.playerLine.textContent = state.sessionBest > 0
+      ? 'Session best: level ' + state.sessionBest + ' · Space to pause'
+      : 'Space to pause';
   }
 
   private syncOverlay(state: GameState) {
@@ -82,31 +78,23 @@ export class Hud {
 
     const lvl = state.level, wl = state.waveInLevel;
     let kicker = 'Level ' + lvl, title = '', body = '', action = 'Begin';
-    if (phase === 'name') { kicker = 'Hollow Line'; title = 'Who holds the line?'; body = 'Each name keeps its own record — the highest level you reach is stored on this device and listed in the local ranking. Keep the name below or type another commander.'; action = 'Continue'; }
     if (phase === 'intro') { kicker = 'The breach'; title = 'Hollow Line'; body = 'Click anywhere off the path to raise a tower — hover an option to read what it does. Click a built tower to upgrade it, eight levels deep. Every level runs five waves and a sixth boss wave, then the road is redrawn.'; action = 'Start level 1'; }
     if (phase === 'paused') { kicker = 'Paused'; title = 'Level ' + lvl + ' · wave ' + wl; body = 'Space resumes.'; action = 'Resume'; }
     if (phase === 'levelup') { kicker = 'Level ' + lvl + ' cleared'; title = 'Boss down'; body = 'A new road is being cut for level ' + (lvl + 1) + ' — each level runs straighter and shorter than the last, so there is less road to shoot along. Towers do not travel: you rebuild on fresh ground with the gold you kept, and three lives come back.'; action = 'Enter level ' + (lvl + 1); }
-    if (phase === 'over') { kicker = 'Line broken'; title = 'Level ' + lvl + ' · wave ' + wl; body = 'Best run so far: level ' + state.best + '.'; action = 'Try again'; }
+    if (phase === 'over') {
+      kicker = 'Line broken';
+      title = 'Level ' + lvl + ' · wave ' + wl;
+      body = state.newSessionRecord
+        ? 'Novo recorde desta sessão! Você chegou ao level ' + state.sessionBest + '.'
+        : 'Seu recorde desta sessão: level ' + state.sessionBest + '.';
+      action = 'Try again';
+    }
 
     this.els.kicker.textContent = kicker;
     this.els.title.textContent = title;
     this.els.body.textContent = body;
     this.els.primaryBtn.textContent = action;
-
-    this.els.nameRow.classList.toggle('show', phase === 'name');
-    if (phase === 'name') this.els.nameInput.value = state.player || '';
-
-    const showRank = (phase === 'name' || phase === 'over') && state.ranking.rows.length > 0;
-    this.els.rankRow.classList.toggle('show', showRank);
-    if (showRank) {
-      this.els.rankRow.innerHTML = '<div class="rank-title">Local ranking</div>' + state.ranking.rows.slice(0, 5).map((r, i) => {
-        const mine = r.name.toLowerCase() === (state.player || '').toLowerCase();
-        return `<div class="rank-item${mine ? ' me' : ''}"><span>${i + 1}. ${escapeHtml(r.name)}</span><span class="lvl">Level ${r.level}</span></div>`;
-      }).join('');
-    }
-
     this.els.restartBtn.hidden = phase !== 'paused';
-    this.els.changePlayerBtn.hidden = !(phase === 'intro' || phase === 'over');
   }
 
   private syncMenu(state: GameState) {
@@ -131,7 +119,9 @@ export class Hud {
   }
 
   private optionHtml(px: number, py: number, o: MenuOption, gold: number): string {
-    const ox = px + Math.cos(o.ang) * 62, oy = py + Math.sin(o.ang) * 62;
+    const pad = 78;
+    const cpx = Math.max(pad, Math.min(W - pad, px)), cpy = Math.max(pad, Math.min(H - pad, py));
+    const ox = cpx + Math.cos(o.ang) * 62, oy = cpy + Math.sin(o.ang) * 62;
     const leftPct = (ox / W) * 100, topPct = (oy / H) * 100;
     const afford = o.cost <= 0 || gold >= o.cost;
     const art = TOWERS[o.key as keyof typeof TOWERS]?.art;
@@ -147,10 +137,12 @@ export class Hud {
   }
 
   private showTip(px: number, py: number, o: MenuOption) {
-    const leftPct = (px / W) * 100;
+    const pad = 78;
+    const cpx = Math.max(pad, Math.min(W - pad, px)), cpy = Math.max(pad, Math.min(H - pad, py));
+    const leftPct = (cpx / W) * 100;
     const anchorRight = leftPct > 55;
     const tip = this.els.buildTip;
-    tip.style.top = ((py / H) * 100) + '%';
+    tip.style.top = ((cpy / H) * 100) + '%';
     tip.style.transform = 'translateY(-50%)';
     if (anchorRight) { tip.style.right = (100 - leftPct + 6) + '%'; tip.style.left = 'auto'; }
     else { tip.style.left = (leftPct + 6) + '%'; tip.style.right = 'auto'; }

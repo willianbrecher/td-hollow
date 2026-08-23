@@ -74,12 +74,16 @@ export class GameScene extends Phaser.Scene {
       g.fillEllipse(p.x, p.y, p.rx * 2, p.ry * 2);
     }
 
-    g.lineStyle(66, 0x0b120e, .92);
-    for (const s of this.state.segs) g.lineBetween(s.a.x, s.a.y, s.b.x, s.b.y);
-    g.lineStyle(56, 0x39352c, 1);
-    for (const s of this.state.segs) g.lineBetween(s.a.x, s.a.y, s.b.x, s.b.y);
-    g.lineStyle(46, 0x453f33, 1);
-    for (const s of this.state.segs) g.lineBetween(s.a.x, s.a.y, s.b.x, s.b.y);
+    const drawRoad = (width: number, color: number, alpha: number) => {
+      g.lineStyle(width, color, alpha);
+      g.beginPath();
+      g.moveTo(this.state.pts[0].x, this.state.pts[0].y);
+      for (let i = 1; i < this.state.pts.length; i++) g.lineTo(this.state.pts[i].x, this.state.pts[i].y);
+      g.strokePath();
+    };
+    drawRoad(66, 0x0b120e, .92);
+    drawRoad(56, 0x39352c, 1);
+    drawRoad(46, 0x453f33, 1);
 
     for (const d of this.state.terrain.decor) this.drawDecor(g, d);
   }
@@ -115,13 +119,12 @@ export class GameScene extends Phaser.Scene {
     const st = this.state;
     g.clear();
 
-    for (const p of st.plots) { g.fillStyle(0x0a0b12, .55); g.fillEllipse(p.x, p.y + 8, 42, 18); }
 
     // moving direction ticks along the road
     g.fillStyle(0x9184d9, .32);
     const dashLen = 5, gapLen = 16, period = dashLen + gapLen;
     const offset = ((st.time * 30) % period + period) % period;
-    for (let d = -offset; d < st.pathLen; d += period) {
+    for (let d = offset - period; d < st.pathLen; d += period) {
       const a = Math.max(0, d), b = Math.min(st.pathLen, d + dashLen);
       if (b <= a) continue;
       const pa = posAtSafe(st, a), pb = posAtSafe(st, b);
@@ -157,6 +160,10 @@ export class GameScene extends Phaser.Scene {
 
     for (const e of st.enemies) {
       const k = KINDS[e.kind];
+      if (e.slow > 0) {
+        g.fillStyle(0x44ee77, .28);
+        g.fillEllipse(e.x, e.y + k.r * .78, k.r * 2.6, k.r * 1.0);
+      }
       g.fillStyle(0x08090f, .45);
       g.fillEllipse(e.x, e.y + k.r * .78, k.r * 1.6, k.r * .6);
       const hpk = Math.max(0, e.hp / e.max);
@@ -227,7 +234,7 @@ export class GameScene extends Phaser.Scene {
       const s = target / Math.max(vis.img.width, vis.img.height);
       vis.img.setScale(s * t.face, s);
       vis.img.setOrigin(0.5, 1);
-      vis.img.setPosition(plot.x, plot.y + 16);
+      vis.img.setPosition(plot.x, plot.y + 10);
       if (lv > 1) {
         if (!vis.badgeBg) {
           vis.badgeBg = this.add.graphics().setDepth(11);
@@ -235,10 +242,10 @@ export class GameScene extends Phaser.Scene {
         }
         vis.badgeBg.clear();
         vis.badgeBg.fillStyle(0x0e0f18, .82);
-        vis.badgeBg.fillRoundedRect(plot.x - 8.5, plot.y + 15, 17, 12, 6);
+        vis.badgeBg.fillRoundedRect(plot.x - 8.5, plot.y + 9, 17, 12, 6);
         vis.badgeBg.lineStyle(1, 0x9184d9, .55);
-        vis.badgeBg.strokeRoundedRect(plot.x - 8.5, plot.y + 15, 17, 12, 6);
-        vis.badgeText!.setText('nv' + lv).setPosition(plot.x, plot.y + 21);
+        vis.badgeBg.strokeRoundedRect(plot.x - 8.5, plot.y + 9, 17, 12, 6);
+        vis.badgeText!.setText('nv' + lv).setPosition(plot.x, plot.y + 15);
       } else if (vis.badgeBg) { vis.badgeBg.destroy(); vis.badgeText?.destroy(); vis.badgeBg = undefined; vis.badgeText = undefined; }
     }
   }
@@ -255,7 +262,6 @@ export class GameScene extends Phaser.Scene {
       const bob = Math.sin(this.state.time * (k.flyer ? 4.2 : 7) + e.d * .05) * (k.flyer ? 3.2 : 1.2);
       img.setPosition(e.x, e.y - h * .12 + bob);
       if (e.hitFlash > 0) img.setTintFill(0xffffff);
-      else if (e.slow > 0) img.setTint(0xa8d97a);
       else img.clearTint();
     }
   }
