@@ -272,15 +272,10 @@ export class GameState {
   /** Handles a click in world coordinates: menu hit-testing, opening a build/upgrade menu, or closing it. */
   handleClick(mx: number, my: number): void {
     if (this.phase !== 'playing') return;
-    if (this.menu) {
-      const plot = this.menu;
-      for (const o of this.menuOptions(plot)) {
-        const ox = plot.x + Math.cos(o.ang) * 62, oy = plot.y + Math.sin(o.ang) * 62;
-        if (Math.hypot(mx - ox, my - oy) < 24) { this.applyMenuOption(plot, o.key, o.cost); return; }
-      }
-      this.menu = null;
-      return;
-    }
+    // The options themselves are DOM buttons layered over the canvas and call
+    // selectMenuOption directly, so anything that reaches the canvas while the
+    // menu is open is a click *outside* it: close and stop there.
+    if (this.menu) { this.menu = null; return; }
     for (const p of this.plots) if (Math.hypot(mx - p.x, my - p.y) < 28) { this.menu = p; return; }
     if (this.canPlace(mx, my)) this.menu = { x: mx, y: my, tower: null };
   }

@@ -3,6 +3,13 @@ import { GameState, MenuOption } from '../core/GameState';
 import { TOWERS } from '../data/towers';
 import { enterFullscreen, fullscreenSupported, onFullscreenChange, toggleFullscreen } from './fullscreen';
 
+/** Angle between neighbouring options — mirrors the fan in GameState.menuOptions. */
+const MENU_STEP = (Math.PI * 5 / 6) / 3;
+
+function clamp(v: number, lo: number, hi: number): number {
+  return hi < lo ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, v));
+}
+
 function $(id: string): HTMLElement { const el = document.getElementById(id); if (!el) throw new Error('missing #' + id); return el; }
 
 /**
@@ -41,6 +48,8 @@ export class Hud {
       this.els.iconExpand.hidden = active;
       this.els.iconCompress.hidden = !active;
     });
+
+    window.addEventListener('resize', () => { this.lastMenuSig = ''; });
 
     // Portrait prompt doubles as the gesture that opens fullscreen + landscape lock.
     const rotateBtn = document.getElementById('btn-rotate-fullscreen') as HTMLButtonElement | null;
@@ -142,16 +151,32 @@ export class Hud {
     });
   }
 
-  private menuOrbit(): { orbit: number; pad: number } {
-    const sw = document.getElementById('stage')?.clientWidth ?? W;
-    return sw / W < 0.85 ? { orbit: 100, pad: 110 } : { orbit: 62, pad: 78 };
+  /**
+   * Where the radial menu sits, in *stage pixels*.
+   *
+   * The orbit used to be a fixed distance in world units, mapped to a
+   * percentage of the stage — on a phone the stage is stretched relative to the
+   * 1120x630 world, so the ring came out as a wide ellipse with the options far
+   * apart. Deriving the radius from the button size instead keeps neighbouring
+   * options a constant few pixels apart on every screen.
+   */
+  private menuCenter(px: number, py: number) {
+    const stage = document.getElementById('stage');
+    const sw = stage?.clientWidth ?? W;
+    const sh = stage?.clientHeight ?? H;
+    const compact = sw < 900;
+    const btn = compact ? 36 : 44;          // keep in sync with .build-menu-option
+    const orbit = Math.round((btn + 6) / (2 * Math.sin(MENU_STEP / 2)));
+    const pad = orbit + btn / 2 + 4;
+    // Options fan out above the plot, so only the top edge needs the full pad.
+    const cx = clamp(px / W * sw, pad, sw - pad);
+    const cy = clamp(py / H * sh, pad, sh - btn / 2);
+    return { cx, cy, orbit, sw };
   }
 
   private optionHtml(px: number, py: number, o: MenuOption, gold: number): string {
-    const { orbit, pad } = this.menuOrbit();
-    const cpx = Math.max(pad, Math.min(W - pad, px)), cpy = Math.max(pad, Math.min(H - pad, py));
-    const ox = cpx + Math.cos(o.ang) * orbit, oy = cpy + Math.sin(o.ang) * orbit;
-    const leftPct = (ox / W) * 100, topPct = (oy / H) * 100;
+    const { cx, cy, orbit } = this.menuCenter(px, py);
+    const ox = Math.round(cx + Math.cos(o.ang) * orbit), oy = Math.round(cy + Math.sin(o.ang) * orbit);
     const afford = o.cost <= 0 || gold >= o.cost;
     const art = TOWERS[o.key as keyof typeof TOWERS]?.art;
     const inner = o.key === 'sell'
@@ -160,21 +185,18 @@ export class Hud {
         ? upIcon()
         : `<img src="sprites/${art}-1.png" alt="${o.label}">`;
     const costHtml = o.cost !== 0
-      ? `<div class="build-menu-cost${o.cost < 0 ? ' refund' : ''}" style="left:${leftPct}%;top:${topPct}%">${o.cost < 0 ? '+' : ''}${Math.abs(o.cost)}</div>`
+      ? `<div class="build-menu-cost${o.cost < 0 ? ' refund' : ''}" style="left:${ox}px;top:${oy}px">${o.cost < 0 ? '+' : ''}${Math.abs(o.cost)}</div>`
       : '';
-    return `<div class="build-menu-option${afford ? '' : ' disallow'}" data-key="${o.key}" style="left:${leftPct}%;top:${topPct}%">${inner}</div>${costHtml}`;
+    return `<div class="build-menu-option${afford ? '' : ' disallow'}" data-key="${o.key}" style="left:${ox}px;top:${oy}px">${inner}</div>${costHtml}`;
   }
 
   private showTip(px: number, py: number, o: MenuOption) {
-    const { pad } = this.menuOrbit();
-    const cpx = Math.max(pad, Math.min(W - pad, px)), cpy = Math.max(pad, Math.min(H - pad, py));
-    const leftPct = (cpx / W) * 100;
-    const anchorRight = leftPct > 55;
+    const { cx, cy, orbit, sw } = this.menuCenter(px, py);
     const tip = this.els.buildTip;
-    tip.style.top = ((cpy / H) * 100) + '%';
+    tip.style.top = cy + 'px';
     tip.style.transform = 'translateY(-50%)';
-    if (anchorRight) { tip.style.right = (100 - leftPct + 6) + '%'; tip.style.left = 'auto'; }
-    else { tip.style.left = (leftPct + 6) + '%'; tip.style.right = 'auto'; }
+    if (cx > sw * 0.55) { tip.style.right = (sw - cx + orbit + 8) + 'px'; tip.style.left = 'auto'; }
+    else { tip.style.left = (cx + orbit + 8) + 'px'; tip.style.right = 'auto'; }
 
     let statsHtml = '';
     if (o.stats) {
