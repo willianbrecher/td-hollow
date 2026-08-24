@@ -50,9 +50,17 @@ export class Hud {
     const tryFullscreenOnLandscape = () => {
       const landscape = window.matchMedia('(orientation: landscape)').matches;
       const mobile = window.matchMedia('(max-width: 1023px)').matches;
-      if (landscape && mobile && !document.fullscreenElement) {
-        document.documentElement.requestFullscreen?.().catch(() => {});
-      }
+      if (!landscape || !mobile || document.fullscreenElement) return;
+      const req = () => document.documentElement.requestFullscreen?.().catch(() => {});
+      const p = document.documentElement.requestFullscreen?.();
+      if (p) p.catch(() => {
+        // No recent gesture — enter fullscreen on next tap instead
+        const once = () => {
+          document.removeEventListener('pointerdown', once);
+          if (window.matchMedia('(orientation: landscape)').matches && !document.fullscreenElement) req();
+        };
+        document.addEventListener('pointerdown', once);
+      });
     };
     window.addEventListener('orientationchange', () => setTimeout(tryFullscreenOnLandscape, 300));
     window.matchMedia('(orientation: landscape)').addEventListener('change', tryFullscreenOnLandscape);
