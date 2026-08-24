@@ -1,6 +1,7 @@
 import { W, H, WAVES_PER_LEVEL } from '../core/constants';
 import { GameState, MenuOption } from '../core/GameState';
 import { TOWERS } from '../data/towers';
+import { enterFullscreen, fullscreenSupported, onFullscreenChange, toggleFullscreen } from './fullscreen';
 
 function $(id: string): HTMLElement { const el = document.getElementById(id); if (!el) throw new Error('missing #' + id); return el; }
 
@@ -35,35 +36,18 @@ export class Hud {
     this.els.nextWaveBtn.addEventListener('click', () => state.callWaveEarly());
     this.els.restartBtn.addEventListener('click', () => state.reset());
     this.els.primaryBtn.addEventListener('click', () => this.onPrimary());
-    this.els.fullscreenBtn.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen?.().catch(() => {});
-      } else {
-        document.exitFullscreen?.().catch(() => {});
-      }
-    });
-    document.addEventListener('fullscreenchange', () => {
-      const active = !!document.fullscreenElement;
+    this.els.fullscreenBtn.addEventListener('click', () => toggleFullscreen());
+    onFullscreenChange(active => {
       this.els.iconExpand.hidden = active;
       this.els.iconCompress.hidden = !active;
     });
-    const tryFullscreenOnLandscape = () => {
-      const landscape = window.matchMedia('(orientation: landscape)').matches;
-      const mobile = window.matchMedia('(max-width: 1023px)').matches;
-      if (!landscape || !mobile || document.fullscreenElement) return;
-      const req = () => document.documentElement.requestFullscreen?.().catch(() => {});
-      const p = document.documentElement.requestFullscreen?.();
-      if (p) p.catch(() => {
-        // No recent gesture — enter fullscreen on next tap instead
-        const once = () => {
-          document.removeEventListener('pointerdown', once);
-          if (window.matchMedia('(orientation: landscape)').matches && !document.fullscreenElement) req();
-        };
-        document.addEventListener('pointerdown', once);
-      });
-    };
-    window.addEventListener('orientationchange', () => setTimeout(tryFullscreenOnLandscape, 300));
-    window.matchMedia('(orientation: landscape)').addEventListener('change', tryFullscreenOnLandscape);
+
+    // Portrait prompt doubles as the gesture that opens fullscreen + landscape lock.
+    const rotateBtn = document.getElementById('btn-rotate-fullscreen') as HTMLButtonElement | null;
+    if (rotateBtn) {
+      if (!fullscreenSupported()) rotateBtn.hidden = true;
+      else rotateBtn.addEventListener('click', () => void enterFullscreen());
+    }
   }
 
   private onPrimary() {
