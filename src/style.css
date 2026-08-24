@@ -277,15 +277,28 @@ html.pseudo-fullscreen, html.pseudo-fullscreen body {
   }
   #status-bar { display: none; }
 
-  /* Safe areas for notched phones */
-  #hud-top-right {
-    top: max(2.2%, env(safe-area-inset-top, 0px));
-    right: max(1.6%, env(safe-area-inset-right, 0px));
+  /* Controls move into the header strip — see Hud.layoutControls */
+  #hud-top-right, #hud-bottom-left { display: none; }
+  #mhdr-controls {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 6px;
   }
-  #hud-bottom-left {
-    bottom: max(3%, env(safe-area-inset-bottom, 0px));
-    left: max(1.6%, env(safe-area-inset-left, 0px));
+  #mhdr-controls .icon-btn {
+    width: 30px; height: 30px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    backdrop-filter: none;
+    font-size: 12px;
   }
+  #mhdr-controls .icon-btn svg { width: 13px; height: 13px; }
+  #mhdr-controls .pill-btn {
+    padding: 5px 10px 5px 8px;
+    gap: 6px;
+    font-size: 11px;
+    background: transparent;
+    backdrop-filter: none;
+  }
+  #mhdr-controls .pill-btn svg { width: 12px; height: 12px; }
 
   /* Tower menu — smaller buttons so they don't overlap on small screens */
   .build-menu-option {
