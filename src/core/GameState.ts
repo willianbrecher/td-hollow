@@ -1,4 +1,4 @@
-import { W, H, WAVES_PER_LEVEL, ACCENT } from './constants';
+import { W, H, PREP_SECONDS, WAVES_PER_LEVEL, ACCENT } from './constants';
 import { TOWERS, ORDER, MAX_LEVEL, TowerType, TowerSpec, upCost } from '../data/towers';
 import { KINDS, BOSSES, MonsterType } from '../data/monsters';
 import { genPath, buildSegments, distToPath, nearestOnPath, posAt, Point, Segment, RoadStyle } from './path';
@@ -100,7 +100,7 @@ export class GameState {
     this.plots = [];
     this.menu = null;
     this.enemies = []; this.shots = []; this.parts = []; this.spawnQueue = [];
-    this.spawnTimer = 0; this.prep = 12; this.time = 0;
+    this.spawnTimer = 0; this.prep = PREP_SECONDS; this.time = 0;
     this.newSessionRecord = false;
     this.phase = 'intro';
   }
@@ -130,7 +130,7 @@ export class GameState {
     this.level = n; this.waveInLevel = 0;
     this.buildMap(this.runSeed + n * 7919);
     this.enemies = []; this.shots = []; this.parts = []; this.spawnQueue = [];
-    this.spawnTimer = 0; this.prep = 15; this.menu = null;
+    this.spawnTimer = 0; this.prep = PREP_SECONDS; this.menu = null;
     this.phase = 'playing';
   }
 
@@ -213,7 +213,7 @@ export class GameState {
         this.lives = Math.min(this.startingLives, this.lives + 3);
         this.phase = 'levelup';
       } else {
-        this.prep = 14;
+        this.prep = PREP_SECONDS;
       }
     }
   }

@@ -27,6 +27,7 @@ export class Hud {
     fullscreenBtn: $('btn-fullscreen') as HTMLButtonElement,
     iconExpand: $('icon-expand'), iconCompress: $('icon-compress'),
     nextWaveBtn: $('btn-next-wave') as HTMLButtonElement, callLabel: $('call-label'),
+    headerControls: $('mhdr-controls'), stageTopRight: $('hud-top-right'), stageBottomLeft: $('hud-bottom-left'),
     overlay: $('overlay'), kicker: $('overlay-kicker'), title: $('overlay-title'), body: $('overlay-body'),
     primaryBtn: $('btn-primary') as HTMLButtonElement,
     restartBtn: $('btn-restart') as HTMLButtonElement,
@@ -51,11 +52,29 @@ export class Hud {
 
     window.addEventListener('resize', () => { this.lastMenuSig = ''; });
 
+    const compact = window.matchMedia('(max-width: 1023px)');
+    this.layoutControls(compact.matches);
+    compact.addEventListener('change', e => this.layoutControls(e.matches));
+
     // Portrait prompt doubles as the gesture that opens fullscreen + landscape lock.
     const rotateBtn = document.getElementById('btn-rotate-fullscreen') as HTMLButtonElement | null;
     if (rotateBtn) {
       if (!fullscreenSupported()) rotateBtn.hidden = true;
       else rotateBtn.addEventListener('click', () => void enterFullscreen());
+    }
+  }
+
+  /**
+   * On phones the floating buttons eat into the board, so every control —
+   * "call wave" included — moves into the header strip. Wider screens keep them
+   * over the stage, so the nodes are re-parented whenever the layout flips.
+   */
+  private layoutControls(compact: boolean): void {
+    const { nextWaveBtn, fullscreenBtn, speedBtn, pauseBtn } = this.els;
+    if (compact) this.els.headerControls.append(nextWaveBtn, fullscreenBtn, speedBtn, pauseBtn);
+    else {
+      this.els.stageBottomLeft.append(nextWaveBtn);
+      this.els.stageTopRight.append(fullscreenBtn, speedBtn, pauseBtn);
     }
   }
 
